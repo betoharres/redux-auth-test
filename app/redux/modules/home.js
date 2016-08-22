@@ -4,6 +4,6 @@ const initialState = fromJS({
   title: 'Teste'
 })
 
-export default function buses (state = initialState) {
+export default function home (state = initialState) {
  return state
 }
