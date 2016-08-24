@@ -25,6 +25,24 @@ const store = createStore(
 
 const history = syncHistoryWithStore(hashHistory, store)
 
+function checkIfAuthed (store) {
+  return store.getState().auth.getIn(['user', 'isSignedIn'])
+}
+
+function checkAuth (nextState, replace) {
+  const isAuthed = checkIfAuthed(store)
+  const nextPath = nextState.location.pathname
+
+  if (nextPath === '/account/') {
+    if (isAuthed === false) {
+      replace('login')
+    }
+  } else if (nextPath === '/login/') {
+    isAuthed ? replace('/') : null
+  }
+}
+
+
 function renderApp ({cookies, isServer, currentLocation} = {}) {
   // configure redux-auth BEFORE rendering the page
   return store.dispatch(configure(
@@ -38,7 +56,7 @@ function renderApp ({cookies, isServer, currentLocation} = {}) {
       return <noscript />;
     } else {
       return (
-        <Provider store={store} key="provider" children={getRoutes(history)} />
+        <Provider store={store} key="provider" children={getRoutes(history, checkAuth)} />
       );
     }
   });
