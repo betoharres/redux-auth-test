@@ -23,8 +23,6 @@ const store = createStore(
   )
 )
 
-const history = syncHistoryWithStore(hashHistory, store)
-
 function checkIfAuthed (store) {
   return store.getState().auth.getIn(['user', 'isSignedIn'])
 }
@@ -38,31 +36,48 @@ function checkAuth (nextState, replace) {
       replace('login')
     }
   } else if (nextPath === '/login/') {
-    isAuthed ? replace('/') : null
+    if (isAuthed === true) {
+      isAuthed ? replace('/') : null
+    }
   }
 }
 
+// configure redux-auth BEFORE rendering the page
+function renderApp ({cookies, isServer, currentLocation, userAgent} = {}) {
 
-function renderApp ({cookies, isServer, currentLocation} = {}) {
-  // configure redux-auth BEFORE rendering the page
+  const history = syncHistoryWithStore(hashHistory, store)
+  const routes = getRoutes(history, checkAuth)
+
   return store.dispatch(configure(
-    // use the FULL PATH to your API
-    {apiUrl: "http://devise-token-auth-demo.dev"},
-    {clientOnly: true, isServer, cookies, currentLocation}
-  )).then(({redirectPath, blank} = {}) => {
-    if (blank) {
-      // if `blank` is true, this is an OAuth redirect and should not
-      // be rendered
-      return <noscript />;
-    } else {
-      return (
-        <Provider store={store} key="provider" children={getRoutes(history, checkAuth)} />
-      );
-    }
+    [
+      {
+        default: {
+          apiUrl: "http://devise-token-auth-demo.dev"
+        }
+      }
+    ], {
+      clientOnly: true,
+      isServer: false,
+      cleanSession,
+      cookies,
+      currentLocation
+  })).then(({redirectPath, blank} = {}) => {
+
+    return ({
+      blank,
+      store,
+      history,
+      routes,
+      redirectPath,
+      provider: (
+        <Provider store={store} key="provider" children={routes} />
+      )
+    });
   });
 }
 
-renderApp().then(appComponent => {
-  ReactDOM.render(appComponent, document.getElementById('app'))
-})
+const reactRoot = window.document.getElementById('app');
 
+renderApp().then(({provider}) => {
+  ReactDOM.render(provider, reactRoot)
+})
