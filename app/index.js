@@ -11,7 +11,7 @@ import thunk from 'redux-thunk'
 import { routerReducer,
          syncHistoryWithStore } from 'react-router-redux'
 
-import { hashHistory } from 'react-router'
+import { hashHistory, browserHistory } from 'react-router'
 
 import {configure, authStateReducer} from "redux-auth"
 
@@ -43,9 +43,9 @@ function checkAuth (nextState, replace) {
 }
 
 // configure redux-auth BEFORE rendering the page
-function renderApp ({cookies, isServer, cleanSession, currentLocation, userAgent} = {}) {
+function renderApp () {
 
-  const history = syncHistoryWithStore(hashHistory, store)
+  const history = syncHistoryWithStore(browserHistory, store)
   const routes = getRoutes(history, checkAuth)
 
   return store.dispatch(configure(
@@ -55,24 +55,24 @@ function renderApp ({cookies, isServer, cleanSession, currentLocation, userAgent
           apiUrl: "http://devise-token-auth-demo.dev"
         }
       }
-    ], {
-      clientOnly: true,
-      isServer: false,
-      cleanSession,
-      cookies,
-      currentLocation
-  })).then(({redirectPath, blank} = {}) => {
-
-    return ({
-      blank,
-      store,
-      history,
-      routes,
-      redirectPath,
-      provider: (
-        <Provider store={store} key="provider" children={routes} />
-      )
-    });
+    ], {isServer: false, serverSideRendering: true, cleanSession: true, clientOnly: true}
+  )).then(({redirectPath, blank} = {}) => {
+    if (blank) {
+      // if `blank` is true, this is an OAuth redirect and should not
+      // be rendered
+      return <noscript />;
+    } else {
+      return ({
+        blank,
+        store,
+        history,
+        routes,
+        redirectPath,
+        provider: (
+          <Provider store={store} key="provider" children={routes} />
+        )
+      });
+    }
   });
 }
 
