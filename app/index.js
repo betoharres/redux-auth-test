@@ -45,7 +45,7 @@ function checkAuth (nextState, replace) {
 // configure redux-auth BEFORE rendering the page
 function renderApp () {
 
-  const history = syncHistoryWithStore(browserHistory, store)
+  const history = syncHistoryWithStore(hashHistory, store)
   const routes = getRoutes(history, checkAuth)
 
   return store.dispatch(configure(
